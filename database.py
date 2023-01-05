@@ -8,13 +8,15 @@ import json
 
 class database:
 
+  session = requests.Session()
+
   def __init__(self): 
     client = pymongo.MongoClient("mongodb+srv://mmozzo:mmozzo1996@reaktor-db.huvxx2m.mongodb.net/?retryWrites=true&w=majority", tlsCAFile=certifi.where())
     db = client["reaktor-db"]
     self.drones_collection = db.drones
 
-  def drones_data():
-    response = requests.get("https://assignments.reaktor.com/birdnest/drones")
+  def drones_data(self):
+    response = self.session.get("https://assignments.reaktor.com/birdnest/drones")
     report = xmltodict.parse(response.content)['report']
     timestamp = report['capture']["@snapshotTimestamp"]
 
@@ -25,14 +27,14 @@ class database:
         'serialNumber': drone['serialNumber'],
         'distance': distance,
         'timestamp': timestamp,
-        'expires_at': datetime.datetime.fromisoformat(timestamp) + datetime.timedelta(minutes=10),
+        'expires_at': datetime.datetime.fromisoformat(timestamp[:-1]+'+00:00') + datetime.timedelta(minutes=10),
         'drone': drone,
       })
 
     return drones_data
 
   def update_database(self):
-    drones_data = database.drones_data()
+    drones_data = database.drones_data(self)
     collection = self.drones_collection
     timestamp = drones_data[0]['timestamp']
 
@@ -42,8 +44,8 @@ class database:
         pilot={}
         if collection.find_one({'serialNumber': drone_data['serialNumber']})==None:
           try:
-            pilot = json.loads(requests.get(f"https://assignments.reaktor.com/birdnest/pilots/{drone_data['serialNumber']}").content.decode('utf-8'))
-          except requests.exceptions.RequestException as e:
+            pilot = json.loads(self.session.get(f"https://assignments.reaktor.com/birdnest/pilots/{drone_data['serialNumber']}").content.decode('utf-8'))
+          except self.session.exceptions.RequestException as e:
             pilot = {'pilotID': None}
 
         collection.find_one_and_update(
@@ -64,7 +66,7 @@ class database:
           }
         )
 
-    collection.delete_many({'expires_at': {'$lte': datetime.datetime.fromisoformat(timestamp)}})
+    collection.delete_many({'expires_at': {'$lte': datetime.datetime.fromisoformat(timestamp[:-1]+'+00:00')}})
 
   def getDrones(self):
     drones = []
