@@ -51,11 +51,11 @@ class database:
         collection.find_one_and_update(
           {'serialNumber': drone_data['serialNumber']},
           {
-            'setOnInsert': {'serialNumber': drone_data['serialNumber'], 'pilot': pilot, 'droneData': drone_data['drone']},
+            '$setOnInsert': {'serialNumber': drone_data['serialNumber'], 'pilot': pilot, 'droneData': drone_data['drone']},
             '$min': {'distance': drone_data['distance']},
             '$set': {'timestamp': drone_data['timestamp'], 'expires_at': drone_data['expires_at']},
           },
-          {'upsert': True}
+          upsert=True
         )
 
       else:
