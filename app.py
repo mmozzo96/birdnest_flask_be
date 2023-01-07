@@ -7,11 +7,8 @@ import xmltodict
 
 database_connection = database()
 
-def test():
-  print('hello')
-
 sched = BackgroundScheduler(daemon=True)
-sched.add_job(test,'interval',seconds=2)
+sched.add_job(database_connection.update_database(),'interval',seconds=2)
 sched.start()
 
 app = Flask(__name__)
