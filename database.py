@@ -59,7 +59,7 @@ class database:
         )
 
       else:
-        collection.find_one_and_update(
+        collection.update_many(
           {'serialNumber': drone_data['serialNumber']},
           {
             '$set': {'timestamp': drone_data['timestamp'], 'expires_at': drone_data['expires_at']},
